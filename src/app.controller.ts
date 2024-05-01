@@ -1,6 +1,6 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserModel } from './entity/user.entity';
+import { Role, UserModel } from './entity/user.entity';
 import { Repository } from 'typeorm';
 
 @Controller()
@@ -12,13 +12,25 @@ export class AppController {
 
   @Post('users')
   postUsers() {
-    return this.userRepository.save({
-      title: 'test title',
-    });
+    return this.userRepository.save({});
   }
 
   @Get('users')
   getUsers() {
-    return this.userRepository.find();
+    return this.userRepository.find({});
+  }
+
+  @Patch('users/:id')
+  async patchUser(@Param('id') id: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    return this.userRepository.save({
+      ...user,
+      title: user.title + '0',
+    });
   }
 }
