@@ -1,13 +1,27 @@
-import { Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserModel } from './entity/user.entity';
 import { Repository } from 'typeorm';
 import { ProfileModel } from './entity/profile.entity';
 import { PostModel } from './entity/post.entity';
 import { TagModel } from './entity/tag.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
+import { GridFSBucket } from 'mongodb';
 
 @Controller()
 export class AppController {
+  private gridFSBucket: GridFSBucket;
+
   constructor(
     @InjectRepository(UserModel)
     private readonly userRepository: Repository<UserModel>,
@@ -17,7 +31,45 @@ export class AppController {
     private readonly postRepository: Repository<PostModel>,
     @InjectRepository(TagModel)
     private readonly tagRepository: Repository<TagModel>,
-  ) {}
+    @InjectConnection()
+    private readonly connection: Connection,
+    // @InjectModel(File.name)
+    // private FileModel: Model<FileDocument>,
+  ) {
+    this.gridFSBucket = new GridFSBucket(this.connection.db, {
+      bucketName: 'uploads',
+    });
+  }
+
+  @Post('file')
+  @UseInterceptors(FileInterceptor('file'))
+  async insertFile(@UploadedFile() file: Express.Multer.File) {
+    console.log({ file });
+    const fsResult = await new Promise((resolve, reject) => {
+      const uploadStream = this.gridFSBucket.openUploadStream(
+        file.originalname,
+        {
+          metadata: { contentType: file.mimetype },
+        },
+      );
+
+      uploadStream.on('error', reject);
+      uploadStream.on('finish', async () => {
+        const result = await this.gridFSBucket
+          .find({
+            filename: file.originalname,
+            length: file.size,
+          })
+          .next();
+
+        resolve(result);
+      });
+
+      uploadStream.end(file.buffer);
+    });
+
+    return fsResult;
+  }
 
   @Post('users')
   postUsers() {

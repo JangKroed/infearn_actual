@@ -14,6 +14,8 @@ import {
 import { ProfileModel } from './entity/profile.entity';
 import { PostModel } from './entity/post.entity';
 import { TagModel } from './entity/tag.entity';
+import { MongooseModule } from '@nestjs/mongoose';
+// import { MongoModule } from './databases/mongo/mongo.module';
 
 @Module({
   imports: [
@@ -37,9 +39,11 @@ import { TagModel } from './entity/tag.entity';
         ProfileModel,
         PostModel,
         TagModel,
+        // MongoModule,
       ],
       synchronize: true,
     }),
+    MongooseModule.forRoot('mongodb://localhost:27017/file_test'),
   ],
   controllers: [AppController],
   providers: [AppService],
