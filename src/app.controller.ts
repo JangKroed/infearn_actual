@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -79,10 +80,27 @@ export class AppController {
   @Get('users')
   getUsers() {
     return this.userRepository.find({
-      relations: {
-        profile: true,
-        posts: true,
-      },
+      // 어떤 프로퍼티를 선택할지
+      // 기본은 모든 프로퍼티를 가져온다
+      // 만약에 select를 정의하지 않으면
+      // select를 정의하면 정의된 프로퍼티들만 가져오게된다.
+      // select: {
+      // id: true,
+      // createdAt: true,
+      // updatedAt: true,
+      // },
+      // 필터링할 조건을 입력하게 된다.
+      where: {},
+      // relations: { profile: true },
+      // 오름차 내림차
+      // ASC -> 오름차
+      // DESC -> 내림차
+      // order: {
+      //   id: 'DESC',
+      // },
+      // 처음 몇개를 제외할지,
+      // skip: 0,
+      // take: 1,
     });
   }
 
@@ -99,16 +117,24 @@ export class AppController {
     });
   }
 
+  @Delete('user/profile/:id')
+  async deleteProfile(@Param('id') id: string) {
+    await this.profileRepository.delete(Number(id));
+  }
+
   @Post('user/profile')
   async createUserAndProfile() {
     const user = await this.userRepository.save({
       email: 'asdf@codefactory.ai',
+      profile: {
+        profileImg: 'asdf.jpg',
+      },
     });
 
-    await this.profileRepository.save({
-      profileImg: 'asdf.jpg',
-      user,
-    });
+    // await this.profileRepository.save({
+    //   profileImg: 'asdf.jpg',
+    //   user,
+    // });
 
     return user;
   }
